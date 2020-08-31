@@ -1,0 +1,10 @@
+[package]
+name = "pngme"
+version = "0.1.0"
+authors = ["pkusensei"]
+edition = "2018"
+
+
+[dependencies]
+clap = "3.0.0-beta.1"
+crc = "^1.0.0"
