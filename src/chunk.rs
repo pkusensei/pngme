@@ -92,21 +92,17 @@ impl Chunk {
         self.length
             .to_be_bytes()
             .iter()
+            .chain(self.chunk_type.bytes().iter())
+            .chain(self.data.iter())
+            .chain(self.crc.to_be_bytes().iter())
             .cloned()
-            .chain(self.chunk_type.bytes().iter().cloned())
-            .chain(self.data.iter().cloned())
-            .chain(self.crc.to_be_bytes().iter().cloned())
             .collect()
     }
 
     fn calc_crc(chunk_type: &[u8], data: &[u8]) -> u32 {
         use crc::crc32::checksum_ieee;
 
-        let bytes: Vec<_> = chunk_type
-            .iter()
-            .cloned()
-            .chain(data.iter().cloned())
-            .collect();
+        let bytes: Vec<_> = chunk_type.iter().chain(data.iter()).cloned().collect();
         checksum_ieee(&bytes)
     }
 }

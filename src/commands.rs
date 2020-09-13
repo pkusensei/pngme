@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, fs::OpenOptions, io::Write, str::FromStr};
+use std::{fs::OpenOptions, io::Write, str::FromStr};
 
 use crate::{
     args::{Decode, Encode, Print, Remove},
@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub fn encode(e: Encode) -> Result<()> {
-    let mut png = Png::try_from(&e.path)?;
+    let mut png = Png::from_file(&e.path)?;
     let chunk_type = ChunkType::from_str(&e.chunk_type)?;
     let data: Vec<u8> = e.message.into();
     let chunk = Chunk::new(chunk_type, data);
@@ -23,7 +23,7 @@ pub fn encode(e: Encode) -> Result<()> {
 }
 
 pub fn decode(d: Decode) -> Result<()> {
-    let png = Png::try_from(&d.path)?;
+    let png = Png::from_file(&d.path)?;
     match png.chunk_by_type(&d.chunk_type) {
         Some(c) => println!("Message is: {}", c.data_as_string()?),
         None => println!("Chunk with type \"{}\" does not exist.", d.chunk_type),
@@ -32,7 +32,7 @@ pub fn decode(d: Decode) -> Result<()> {
 }
 
 pub fn remove(r: Remove) -> Result<()> {
-    let mut png = Png::try_from(&r.path)?;
+    let mut png = Png::from_file(&r.path)?;
     match png.remove_chunk(&r.chunk_type) {
         Ok(c) => {
             let mut file = OpenOptions::new()
@@ -48,6 +48,6 @@ pub fn remove(r: Remove) -> Result<()> {
 }
 
 pub fn print(p: Print) -> Result<()> {
-    println!("{}", Png::try_from(&p.path)?);
+    println!("{}", Png::from_file(&p.path)?);
     Ok(())
 }

@@ -3,7 +3,7 @@ use std::{
     fmt::Display,
     fs::File,
     io::{BufReader, Read},
-    path::PathBuf,
+    path::Path,
 };
 
 use crate::chunk::Chunk;
@@ -17,7 +17,7 @@ pub struct Png {
 impl TryFrom<&[u8]> for Png {
     type Error = Error;
 
-    fn try_from(bytes: &[u8]) -> Result<Png> {
+    fn try_from(bytes: &[u8]) -> Result<Self> {
         let mut reader = BufReader::new(bytes);
         let mut header_buf = [0u8; 8];
 
@@ -25,28 +25,17 @@ impl TryFrom<&[u8]> for Png {
         if header_buf != Self::STANDARD_HEADER {
             Err("Invalid header for PNG.".into())
         } else {
-            let mut remaining: Vec<_> = bytes.iter().skip(8).cloned().collect();
+            let mut remaining = &bytes[8..];
             let mut chunks = vec![];
             while !remaining.is_empty() {
-                let chunk = Chunk::try_from(remaining.as_slice())?;
+                let chunk = Chunk::try_from(remaining)?;
                 let chunk_size = chunk.length() + 12;
                 chunks.push(chunk);
-                remaining = remaining.split_off(chunk_size as usize);
+                remaining = &remaining[chunk_size as usize..];
             }
 
             Ok(Self::from_chunks(chunks))
         }
-    }
-}
-
-impl TryFrom<&PathBuf> for Png {
-    type Error = Error;
-
-    fn try_from(value: &PathBuf) -> Result<Self> {
-        let mut file = File::open(value)?;
-        let mut buffer = vec![];
-        file.read_to_end(&mut buffer)?;
-        Self::try_from(buffer.as_slice())
     }
 }
 
@@ -61,6 +50,13 @@ impl Png {
 
     pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
         Self { chunks }
+    }
+
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let mut file = File::open(path)?;
+        let mut buffer = vec![];
+        file.read_to_end(&mut buffer)?;
+        Self::try_from(buffer.as_slice())
     }
 
     pub fn append_chunk(&mut self, chunk: Chunk) {
